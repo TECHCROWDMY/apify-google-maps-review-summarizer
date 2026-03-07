@@ -1,0 +1,9 @@
+{
+  "actorSpecification": 1,
+  "name": "google-maps-review-summarizer",
+  "title": "Google Maps Review Summarizer",
+  "description": "Paste a Google Maps URL and get a plain-English summary of what customers love, hate, and keep mentioning.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
+}

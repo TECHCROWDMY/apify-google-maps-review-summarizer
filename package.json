@@ -1,0 +1,17 @@
+{
+  "name": "google-maps-review-summarizer",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Paste a Google Maps URL, get a plain-English review summary card powered by AI.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "apify": "^3.0.0",
+    "openai": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

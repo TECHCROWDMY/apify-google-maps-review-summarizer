@@ -1,0 +1,31 @@
+{
+  "title": "Google Maps Review Summarizer",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "googleMapsUrl": {
+      "title": "Google Maps URL",
+      "type": "string",
+      "description": "Paste the full Google Maps URL of the business you want to analyse.",
+      "editor": "textfield",
+      "example": "https://www.google.com/maps/place/Kedai+Kopi+ABC/@..."
+    },
+    "maxReviews": {
+      "title": "Max Reviews to Analyse",
+      "type": "integer",
+      "description": "How many reviews to pull. 100 is plenty for a good summary.",
+      "default": 100,
+      "maximum": 200,
+      "minimum": 20,
+      "editor": "number"
+    },
+    "openaiApiKey": {
+      "title": "OpenAI API Key",
+      "type": "string",
+      "description": "Your OpenAI API key for AI summarization.",
+      "editor": "textfield",
+      "isSecret": true
+    }
+  },
+  "required": ["googleMapsUrl", "openaiApiKey"]
+}
