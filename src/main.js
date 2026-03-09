@@ -13,22 +13,18 @@ if (!openaiApiKey)  throw new Error('❌ Please provide an OpenAI API key.');
 
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
-// ── 2. Use ApifyClient directly with token ─────────────────────────────────
+// ── 2. Call the reviews scraper ────────────────────────────────────────────
 const client = new ApifyClient({ token: process.env.APIFY_TOKEN });
 
 const run = await client.actor('compass/google-maps-reviews-scraper').call({
   startUrls: [{ url: googleMapsUrl }],
-  maxCrawledPlaces: 1,
-  includeReviews: true,
   maxReviews,
   reviewsSort: 'newest',
   language: 'en',
 });
 
-const { items: places } = await client.dataset(run.defaultDatasetId).listItems();
-
-const place   = places?.[0];
-const reviews = place?.reviews ?? [];
+// Reviews come back as flat items — each item IS a review
+const { items: reviews } = await client.dataset(run.defaultDatasetId).listItems();
 
 if (!reviews || reviews.length === 0) {
   throw new Error('❌ No reviews found. Check the URL and try again.');
@@ -36,10 +32,10 @@ if (!reviews || reviews.length === 0) {
 
 console.log(`✅ Pulled ${reviews.length} reviews. Summarising...`);
 
-// ── 3. Grab business info ──────────────────────────────────────────────────
-const businessName = place?.title ?? 'This Business';
-const avgRating    = place?.totalScore ?? '?';
-const totalReviews = place?.reviewsCount ?? '?';
+// ── 3. Grab business info from first review item ───────────────────────────
+const businessName = reviews[0]?.name ?? 'This Business';
+const avgRating    = reviews[0]?.totalScore ?? '?';
+const totalReviews = reviews[0]?.reviewsCount ?? reviews.length;
 
 // ── 4. Build review text for AI ────────────────────────────────────────────
 const reviewTexts = reviews
