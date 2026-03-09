@@ -1,4 +1,5 @@
 import { Actor } from 'apify';
+import { ApifyClient } from 'apify-client';
 import OpenAI from 'openai';
 
 await Actor.init();
@@ -12,8 +13,10 @@ if (!openaiApiKey)  throw new Error('❌ Please provide an OpenAI API key.');
 
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
-// ── 2. Run the Google Maps Scraper ─────────────────────────────────────────
-const reviewRun = await Actor.call('apify/google-maps-scraper', {
+// ── 2. Use ApifyClient directly with token ─────────────────────────────────
+const client = new ApifyClient({ token: process.env.APIFY_TOKEN });
+
+const run = await client.actor('apify/google-maps-scraper').call({
   startUrls: [{ url: googleMapsUrl }],
   maxCrawledPlaces: 1,
   includeReviews: true,
@@ -22,11 +25,9 @@ const reviewRun = await Actor.call('apify/google-maps-scraper', {
   language: 'en',
 });
 
-const dataset = await Actor.openDataset(reviewRun.defaultDatasetId);
-const { items: places } = await dataset.getData();
+const { items: places } = await client.dataset(run.defaultDatasetId).listItems();
 
-// Reviews are nested inside the place object
-const place = places?.[0];
+const place   = places?.[0];
 const reviews = place?.reviews ?? [];
 
 if (!reviews || reviews.length === 0) {
@@ -35,12 +36,12 @@ if (!reviews || reviews.length === 0) {
 
 console.log(`✅ Pulled ${reviews.length} reviews. Summarising...`);
 
-// ── 3. Grab business info from the place object ────────────────────────────
+// ── 3. Grab business info ──────────────────────────────────────────────────
 const businessName = place?.title ?? 'This Business';
 const avgRating    = place?.totalScore ?? '?';
 const totalReviews = place?.reviewsCount ?? '?';
 
-// ── 4. Build review text for AI (keep tokens low) ─────────────────────────
+// ── 4. Build review text for AI ────────────────────────────────────────────
 const reviewTexts = reviews
   .filter(r => r.text && r.text.trim().length > 10)
   .slice(0, 80)
