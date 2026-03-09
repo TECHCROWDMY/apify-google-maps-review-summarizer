@@ -13,7 +13,7 @@ if (!openaiApiKey)  throw new Error('❌ Please provide an OpenAI API key.');
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
 // ── 2. Run the Google Maps Reviews scraper ─────────────────────────────────
-const reviewRun = await Actor.callTask('apify/google-maps-reviews-scraper', {
+const reviewRun = await Actor.call('apify/google-maps-reviews-scraper', {
   startUrls: [{ url: googleMapsUrl }],
   maxReviews,
   reviewsSort: 'newest',
