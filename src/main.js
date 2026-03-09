@@ -16,7 +16,7 @@ console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 // ── 2. Use ApifyClient directly with token ─────────────────────────────────
 const client = new ApifyClient({ token: process.env.APIFY_TOKEN });
 
-const run = await client.actor('apify/google-maps-scraper').call({
+const run = await client.actor('compass/google-maps-reviews-scraper').call({
   startUrls: [{ url: googleMapsUrl }],
   maxCrawledPlaces: 1,
   includeReviews: true,
