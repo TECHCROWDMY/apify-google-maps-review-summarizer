@@ -1,15 +1,14 @@
 import { Actor } from 'apify';
 import { ApifyClient } from 'apify-client';
-import Anthropic from '@anthropic-ai/sdk';
 
 await Actor.init();
 
 // ── 1. Read input ──────────────────────────────────────────────────────────
 const input = await Actor.getInput();
-const { googleMapsUrl, maxReviews = 100, claudeApiKey } = input;
+const { googleMapsUrl, maxReviews = 100, geminiApiKey } = input;
 
 if (!googleMapsUrl) throw new Error('❌ Please provide a Google Maps URL.');
-if (!claudeApiKey)  throw new Error('❌ Please provide a Claude API key.');
+if (!geminiApiKey)  throw new Error('❌ Please provide a Gemini API key.');
 
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
@@ -31,7 +30,7 @@ if (!reviews || reviews.length === 0) {
 
 console.log(`✅ Pulled ${reviews.length} reviews. Summarising...`);
 
-// ── 3. Grab business info from first review item ───────────────────────────
+// ── 3. Grab business info ──────────────────────────────────────────────────
 const businessName = reviews[0]?.name ?? 'This Business';
 const avgRating    = reviews[0]?.totalScore ?? '?';
 const totalReviews = reviews[0]?.reviewsCount ?? reviews.length;
@@ -43,16 +42,8 @@ const reviewTexts = reviews
   .map((r, i) => `[${i + 1}] (${r.stars}★) ${r.text.trim()}`)
   .join('\n');
 
-// ── 5. Call Claude API ─────────────────────────────────────────────────────
-const anthropic = new Anthropic({ apiKey: claudeApiKey });
-
-const message = await anthropic.messages.create({
-  model: 'claude-haiku-4-5-20251001',
-  max_tokens: 400,
-  messages: [
-    {
-      role: 'user',
-      content: `
+// ── 5. Call Gemini API (free tier) ─────────────────────────────────────────
+const prompt = `
 You are a business analyst. Below are customer reviews for "${businessName}".
 
 Analyse them and return ONLY the following format, nothing else:
@@ -70,12 +61,24 @@ Be concise. Plain English only. No jargon.
 
 REVIEWS:
 ${reviewTexts}
-      `.trim(),
-    },
-  ],
-});
+`.trim();
 
-const summary = message.content[0].text.trim();
+const geminiRes = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 400, temperature: 0.3 },
+    }),
+  }
+);
+
+const geminiData = await geminiRes.json();
+const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+if (!summary) throw new Error('❌ Gemini returned no response. Check your API key.');
 
 console.log('\n─────────────────────────────────');
 console.log(summary);

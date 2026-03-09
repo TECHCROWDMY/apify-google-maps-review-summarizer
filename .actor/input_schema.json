@@ -19,13 +19,13 @@
       "minimum": 20,
       "editor": "number"
     },
-    "claudeApiKey": {
-      "title": "Claude API Key",
+    "geminiApiKey": {
+      "title": "Gemini API Key",
       "type": "string",
-      "description": "Your Claude API key from console.anthropic.com",
+      "description": "Your free Gemini API key from aistudio.google.com",
       "editor": "textfield",
       "isSecret": true
     }
   },
-  "required": ["googleMapsUrl", "claudeApiKey"]
+  "required": ["googleMapsUrl", "geminiApiKey"]
 }
