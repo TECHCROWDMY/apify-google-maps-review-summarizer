@@ -8,7 +8,7 @@
       "type": "string",
       "description": "Paste the full Google Maps URL of the business you want to analyse.",
       "editor": "textfield",
-      "example": "https://www.google.com/maps/place/Kedai+Kopi+ABC/@..."
+      "example": "https://www.google.com/maps/place/..."
     },
     "maxReviews": {
       "title": "Max Reviews to Analyse",
@@ -19,13 +19,13 @@
       "minimum": 20,
       "editor": "number"
     },
-    "openaiApiKey": {
-      "title": "OpenAI API Key",
+    "claudeApiKey": {
+      "title": "Claude API Key",
       "type": "string",
-      "description": "Your OpenAI API key for AI summarization.",
+      "description": "Your Claude API key from console.anthropic.com",
       "editor": "textfield",
       "isSecret": true
     }
   },
-  "required": ["googleMapsUrl", "openaiApiKey"]
+  "required": ["googleMapsUrl", "claudeApiKey"]
 }
