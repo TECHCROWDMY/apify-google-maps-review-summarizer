@@ -76,9 +76,14 @@ const geminiRes = await fetch(
 );
 
 const geminiData = await geminiRes.json();
+
+// Log full response to help debug
+console.log('Gemini HTTP status:', geminiRes.status);
+console.log('Gemini raw response:', JSON.stringify(geminiData, null, 2));
+
 const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-if (!summary) throw new Error('❌ Gemini returned no response. Check your API key.');
+if (!summary) throw new Error('❌ Gemini returned no summary. See logs above for full response.');
 
 console.log('\n─────────────────────────────────');
 console.log(summary);
