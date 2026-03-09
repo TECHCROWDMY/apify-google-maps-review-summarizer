@@ -12,15 +12,22 @@ if (!openaiApiKey)  throw new Error('❌ Please provide an OpenAI API key.');
 
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
-// ── 2. Run the Google Maps Reviews scraper ─────────────────────────────────
-const reviewRun = await Actor.call('apify/google-maps-reviews-scraper', {
+// ── 2. Run the Google Maps Scraper ─────────────────────────────────────────
+const reviewRun = await Actor.call('apify/google-maps-scraper', {
   startUrls: [{ url: googleMapsUrl }],
+  maxCrawledPlaces: 1,
+  includeReviews: true,
   maxReviews,
   reviewsSort: 'newest',
   language: 'en',
 });
 
-const { items: reviews } = await Actor.openDataset(reviewRun.defaultDatasetId);
+const dataset = await Actor.openDataset(reviewRun.defaultDatasetId);
+const { items: places } = await dataset.getData();
+
+// Reviews are nested inside the place object
+const place = places?.[0];
+const reviews = place?.reviews ?? [];
 
 if (!reviews || reviews.length === 0) {
   throw new Error('❌ No reviews found. Check the URL and try again.');
@@ -28,15 +35,15 @@ if (!reviews || reviews.length === 0) {
 
 console.log(`✅ Pulled ${reviews.length} reviews. Summarising...`);
 
-// ── 3. Grab business name + star rating from first review ──────────────────
-const businessName = reviews[0]?.name ?? 'This Business';
-const totalReviews  = reviews[0]?.totalScore ?? '?';
-const avgRating     = reviews[0]?.stars ?? '?';
+// ── 3. Grab business info from the place object ────────────────────────────
+const businessName = place?.title ?? 'This Business';
+const avgRating    = place?.totalScore ?? '?';
+const totalReviews = place?.reviewsCount ?? '?';
 
 // ── 4. Build review text for AI (keep tokens low) ─────────────────────────
 const reviewTexts = reviews
   .filter(r => r.text && r.text.trim().length > 10)
-  .slice(0, 80) // cap at 80 for token efficiency
+  .slice(0, 80)
   .map((r, i) => `[${i + 1}] (${r.stars}★) ${r.text.trim()}`)
   .join('\n');
 
@@ -48,8 +55,8 @@ You are a business analyst. Below are customer reviews for "${businessName}".
 
 Analyse them and return ONLY the following format, nothing else:
 
-BUSINESS: <name>
-RATING: <avg stars> stars across <total> reviews
+BUSINESS: ${businessName}
+RATING: ${avgRating} stars across ${totalReviews} reviews
 
 ✅ LOVE: <3 short bullet points on what customers consistently praise>
 ❌ HATE: <3 short bullet points on the most common complaints>
