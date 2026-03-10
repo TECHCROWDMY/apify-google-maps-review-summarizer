@@ -42,7 +42,28 @@ const reviewTexts = reviews
   .map((r, i) => `[${i + 1}] (${r.stars}★) ${r.text.trim()}`)
   .join('\n');
 
-// ── 5. Call Gemini API (free tier) ─────────────────────────────────────────
+// ── 5. Discover available Gemini models for this API key ───────────────────
+const listRes  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
+const listData = await listRes.json();
+const available = (listData.models || [])
+  .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+  .map(m => m.name);
+
+console.log('Available Gemini models:', available);
+
+const preferred = [
+  'models/gemini-1.5-flash',
+  'models/gemini-1.5-flash-001',
+  'models/gemini-1.5-pro',
+  'models/gemini-pro',
+  'models/gemini-2.0-flash',
+  'models/gemini-2.0-flash-001',
+];
+const model = preferred.find(m => available.includes(m)) ?? available[0];
+if (!model) throw new Error('❌ No Gemini models available for this API key.');
+console.log(`🤖 Using model: ${model}`);
+
+// ── 6. Call Gemini ─────────────────────────────────────────────────────────
 const prompt = `
 You are a business analyst. Below are customer reviews for "${businessName}".
 
@@ -63,8 +84,8 @@ REVIEWS:
 ${reviewTexts}
 `.trim();
 
-const geminiRes = await fetch(
-  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
+const geminiRes  = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${geminiApiKey}`,
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -76,23 +97,22 @@ const geminiRes = await fetch(
 );
 
 const geminiData = await geminiRes.json();
-
-// Log full response to help debug
-console.log('Gemini HTTP status:', geminiRes.status);
-console.log('Gemini raw response:', JSON.stringify(geminiData, null, 2));
+if (!geminiRes.ok) {
+  console.log('Gemini error:', JSON.stringify(geminiData, null, 2));
+  throw new Error(`❌ Gemini API error ${geminiRes.status}`);
+}
 
 const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-if (!summary) throw new Error('❌ Gemini returned no summary. See logs above for full response.');
+if (!summary) throw new Error('❌ Gemini returned empty summary.');
 
 console.log('\n─────────────────────────────────');
 console.log(summary);
 console.log('─────────────────────────────────\n');
 
-// ── 6. Charge the user ─────────────────────────────────────────────────────
+// ── 7. Charge the user ─────────────────────────────────────────────────────
 await Actor.charge({ eventName: 'run' });
 
-// ── 7. Save output ─────────────────────────────────────────────────────────
+// ── 8. Save output ─────────────────────────────────────────────────────────
 await Actor.pushData({
   businessName,
   googleMapsUrl,
