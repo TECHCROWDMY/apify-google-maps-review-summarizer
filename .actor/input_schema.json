@@ -18,14 +18,7 @@
       "maximum": 200,
       "minimum": 20,
       "editor": "number"
-    },
-    "geminiApiKey": {
-      "title": "Gemini API Key",
-      "type": "string",
-      "description": "Your free Gemini API key from aistudio.google.com",
-      "editor": "textfield",
-      "isSecret": true
     }
   },
-  "required": ["googleMapsUrl", "geminiApiKey"]
+  "required": ["googleMapsUrl"]
 }

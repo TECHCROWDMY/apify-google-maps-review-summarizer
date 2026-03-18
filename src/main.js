@@ -5,10 +5,9 @@ await Actor.init();
 
 // ── 1. Read input ──────────────────────────────────────────────────────────
 const input = await Actor.getInput();
-const { googleMapsUrl, maxReviews = 100, geminiApiKey } = input;
+const { googleMapsUrl, maxReviews = 100 } = input;
 
 if (!googleMapsUrl) throw new Error('❌ Please provide a Google Maps URL.');
-if (!geminiApiKey)  throw new Error('❌ Please provide a Gemini API key.');
 
 console.log(`📍 Fetching reviews for: ${googleMapsUrl}`);
 
@@ -42,28 +41,7 @@ const reviewTexts = reviews
   .map((r, i) => `[${i + 1}] (${r.stars}★) ${r.text.trim()}`)
   .join('\n');
 
-// ── 5. Discover available Gemini models for this API key ───────────────────
-const listRes  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
-const listData = await listRes.json();
-const available = (listData.models || [])
-  .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
-  .map(m => m.name);
-
-console.log('Available Gemini models:', available);
-
-const preferred = [
-  'models/gemini-1.5-flash',
-  'models/gemini-1.5-flash-001',
-  'models/gemini-1.5-pro',
-  'models/gemini-pro',
-  'models/gemini-2.0-flash',
-  'models/gemini-2.0-flash-001',
-];
-const model = preferred.find(m => available.includes(m)) ?? available[0];
-if (!model) throw new Error('❌ No Gemini models available for this API key.');
-console.log(`🤖 Using model: ${model}`);
-
-// ── 6. Call Gemini ─────────────────────────────────────────────────────────
+// ── 5. Call YTL AI Labs API ────────────────────────────────────────────────
 const prompt = `
 You are a business analyst. Below are customer reviews for "${businessName}".
 
@@ -84,35 +62,38 @@ REVIEWS:
 ${reviewTexts}
 `.trim();
 
-const geminiRes  = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${geminiApiKey}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 400, temperature: 0.3 },
-    }),
-  }
-);
+const aiRes = await fetch('https://api.staging.ytlailabs.tech/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer sk-202hPxeCBGjqltCjnhksoh_bNmyZA3QQBVNG9cbbdHo`,
+  },
+  body: JSON.stringify({
+    model: 'ilmu-text-free-v2',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 400,
+    temperature: 0.3,
+  }),
+});
 
-const geminiData = await geminiRes.json();
-if (!geminiRes.ok) {
-  console.log('Gemini error:', JSON.stringify(geminiData, null, 2));
-  throw new Error(`❌ Gemini API error ${geminiRes.status}`);
+const aiData = await aiRes.json();
+
+if (!aiRes.ok) {
+  console.log('AI API error:', JSON.stringify(aiData, null, 2));
+  throw new Error(`❌ AI API error ${aiRes.status}`);
 }
 
-const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-if (!summary) throw new Error('❌ Gemini returned empty summary.');
+const summary = aiData.choices?.[0]?.message?.content?.trim();
+if (!summary) throw new Error('❌ AI returned empty summary.');
 
 console.log('\n─────────────────────────────────');
 console.log(summary);
 console.log('─────────────────────────────────\n');
 
-// ── 7. Charge the user ─────────────────────────────────────────────────────
+// ── 6. Charge the user ─────────────────────────────────────────────────────
 await Actor.charge({ eventName: 'run' });
 
-// ── 8. Save output ─────────────────────────────────────────────────────────
+// ── 7. Save output ─────────────────────────────────────────────────────────
 await Actor.pushData({
   businessName,
   googleMapsUrl,
