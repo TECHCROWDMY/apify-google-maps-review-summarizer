@@ -71,8 +71,6 @@ const aiRes = await fetch('https://api.staging.ytlailabs.tech/v1/chat/completion
   body: JSON.stringify({
     model: 'ilmu-text-free-v2',
     messages: [{ role: 'user', content: prompt }],
-    max_tokens: 400,
-    temperature: 0.3,
   }),
 });
 
@@ -83,6 +81,7 @@ if (!aiRes.ok) {
   throw new Error(`❌ AI API error ${aiRes.status}`);
 }
 
+console.log('AI raw response:', JSON.stringify(aiData, null, 2));
 const summary = aiData.choices?.[0]?.message?.content?.trim();
 if (!summary) throw new Error('❌ AI returned empty summary.');
 
