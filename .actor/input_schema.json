@@ -8,7 +8,8 @@
       "type": "string",
       "description": "Paste the full Google Maps URL of the business you want to analyse.",
       "editor": "textfield",
-      "example": "https://www.google.com/maps/place/..."
+      "example": "https://www.google.com/maps/place/Rosa+Malacca/@2.1992796,102.2499742,15z",
+      "prefill": "https://www.google.com/maps/place/Rosa+Malacca/@2.1992796,102.2499742,15z"
     },
     "maxReviews": {
       "title": "Max Reviews to Analyse",
@@ -17,7 +18,8 @@
       "default": 100,
       "maximum": 200,
       "minimum": 20,
-      "editor": "number"
+      "editor": "number",
+      "prefill": 20
     }
   },
   "required": ["googleMapsUrl"]
